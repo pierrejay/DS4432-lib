@@ -61,6 +61,7 @@ void setup() {
 
 void loop() {
     static const int8_t values[] = {-127, -100, -80, -60, -40, -20, 0, 20, 40, 60, 80, 100, 127};
+    // static const int8_t values[] = {127};
     static const int8_t nbValues = sizeof(values) / sizeof(values[0]);
     static uint8_t index = 0;
     
@@ -80,5 +81,5 @@ void loop() {
     // Passe à la valeur suivante
     index = (index + 1) % nbValues;
     
-    delay(1000);
+    delay(2000);
 }
