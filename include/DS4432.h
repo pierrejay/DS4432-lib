@@ -6,6 +6,7 @@ namespace DS4432 {
 static constexpr uint8_t ADDR = 0x48; // 0x90 en 7 bits (Arduino Wire)
 static constexpr uint8_t OUT0 = 0xF8;
 static constexpr uint8_t OUT1 = 0xF9;
+static constexpr int8_t ERROR = -128; // DS4432::get() returns this value if there is an error (-127...127 are valid)
 
 // Convertit un int8_t (-128..+127) en octet DS4432 (bit7=signe, bits6..0=magnitude).
 inline uint8_t cmdToByte(int8_t cmd) {
@@ -55,7 +56,7 @@ inline bool set(TwoWire &i2c, uint8_t output, int8_t cmd) {
 // output = 0 pour OUT0 (0xF8), 1 pour OUT1 (0xF9)
 // renvoie la consigne -127..+127
 inline int8_t get(TwoWire &i2c, uint8_t output) {
-    if (output > 1) return 0; // ou gérer autrement l’erreur
+    if (output > 1) return ERROR; // ou gérer autrement l’erreur
     uint8_t reg = (output == 0) ? OUT0 : OUT1;
 
     // On pointe d’abord le registre à lire
@@ -67,7 +68,7 @@ inline int8_t get(TwoWire &i2c, uint8_t output) {
     // On lit 1 octet
     i2c.requestFrom(ADDR, 1);
     if (!i2c.available()) {
-        return 0; // erreur de lecture
+        return ERROR; // erreur de lecture
     }
     uint8_t val = i2c.read();
 
