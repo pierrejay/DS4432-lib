@@ -12,12 +12,12 @@ This library provides a clean API to interface with the DS4432 from any Arduino-
 
 - Simple control of both DAC channels
 - Source mode (+1 to +127) and sink mode (-1 to -127) support
-- Error checking and validation
+- Error checking and validation, readback mode for `set()` function
 - Compact code size
 
 ## Hardware Connection
 
-Connect your DS4432 to your Arduino/ESP8266/ESP32:
+Connect your DS4432 to your Arduino/ESP32/...:
 
 - VCC → 3.3V or 5V (DS4432 works from 2.7V to 5.5V)
 - GND → GND
@@ -35,12 +35,15 @@ void setup() {
   Wire.begin();  // Initialize I2C
   
   // Set channel 0 to source 50 (about 39% of full scale)
+  // Return false if the I2C write fails
   DS4432::set(Wire, 0, 50);
   
-  // Set channel 1 to sink 75 (about 59% of full scale)
-  DS4432::set(Wire, 1, -75);
+  // Set channel 1 to sink 75 (about 59% of full scale) with readback
+  // Return false if the I2C write fails or readback is inconsistent
+  DS4432::set(Wire, 1, -75, true);
   
   // Read back the values
+  // Return ERROR (-128) if the I2C read fails
   int8_t ch0 = DS4432::get(Wire, 0);  // Should return 50
   int8_t ch1 = DS4432::get(Wire, 1);  // Should return -75
 }
@@ -49,10 +52,6 @@ void setup() {
 ## Applications
 
 The DS4432 is particularly useful for creating adjustable regulators (e.g. Buck) by injecting current into the feedback node (voltage divider setting the reference voltage in most cases). See the Maxim datasheet for more implementation details.
-
-## License
-
-MIT License.
 
 ## References
 
