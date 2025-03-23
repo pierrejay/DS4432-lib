@@ -2,8 +2,8 @@
 #include <Wire.h>
 #include "DS4432.h"
 
-#define SDA_PIN D7
-#define SCL_PIN D8
+#define SDA_PIN D8
+#define SCL_PIN D7
 
 void testValue(uint8_t channel, int8_t expected) {
     int8_t actual = DS4432::get(Wire, channel);
@@ -17,6 +17,31 @@ void testValue(uint8_t channel, int8_t expected) {
     Serial.println((expected == actual) ? "OK" : "ERROR");
 }
 
+void scanI2C() {
+  Serial.println("Scanning I2C bus...");
+  byte count = 0;
+  
+  for (byte i = 8; i < 120; i++) {
+    Wire.beginTransmission(i);
+    byte error = Wire.endTransmission();
+    
+    if (error == 0) {
+      Serial.print("Device found at address 0x");
+      if (i < 16) Serial.print("0");
+      Serial.print(i, HEX);
+      Serial.print(" (0x");
+      if (i*2 < 16) Serial.print("0");
+      Serial.print(i*2, HEX);
+      Serial.println(" in 8-bit format)");
+      count++;
+    }
+  }
+  
+  Serial.print("Found ");
+  Serial.print(count);
+  Serial.println(" device(s).");
+}
+
 void setup() {
     delay(3000);
 
@@ -27,7 +52,20 @@ void setup() {
     
     // Init I2C
     Wire.begin(SDA_PIN, SCL_PIN);
-    delay(10); // Laisse le temps au DS4432 de s'initialiser
+    // Wire.setClock(100000); // Réduire la vitesse I2C à 100kHz pour plus de fiabilité
+    vTaskDelay(pdMS_TO_TICKS(100)); // Augmenter le délai pour laisser plus de temps au DS4432 de s'initialiser
+    
+    // Scanner le bus I2C
+    scanI2C();
+    
+    // Vérifier si le DS4432 est présent
+    Wire.beginTransmission(DS4432::ADDR);
+    uint8_t error = Wire.endTransmission();
+    if (error == 0) {
+        Serial.println("DS4432 found!");
+    } else {
+        Serial.printf("DS4432 not found! Error: %d\n", error);
+    }
     
     // Test canal 0
     Serial.println("\nTesting channel 0 (source)");

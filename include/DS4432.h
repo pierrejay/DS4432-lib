@@ -42,6 +42,32 @@ inline int8_t byteToCmd(uint8_t val) {
     return cmd;
 }
 
+/* @brief Read the command from the DS4432
+ * @param i2c: the I2C object
+ * @param output: the output to read (0 for OUT0, 1 for OUT1)
+ * @return Current value -127..+127, or ERROR (-128) if there is an error
+ */
+inline int8_t get(TwoWire &i2c, uint8_t output) {
+    if (output > 1) return ERROR;
+    uint8_t reg = (output == 0) ? OUT0 : OUT1;
+
+    // First point to the register to read
+    i2c.beginTransmission(ADDR);
+    i2c.write(reg);
+    // End transmission without STOP (→ repeated START)
+    i2c.endTransmission(false);
+
+    // Read 1 byte
+    i2c.requestFrom(ADDR, (uint8_t)1);
+    if (!i2c.available()) {
+        return ERROR; // read error
+    }
+    uint8_t val = i2c.read();
+
+    // Convert the DS4432 byte to -127..+127
+    return byteToCmd(val);
+}
+
 /* @brief Set the command to the DS4432
  * @param i2c: the I2C object
  * @param output: the output to set (0 for OUT0, 1 for OUT1)
@@ -65,38 +91,11 @@ inline bool set(TwoWire &i2c, uint8_t output, int8_t cmd, bool ack = false) {
 
     // Check the value if requested
     if (ack) {
-        int8_t readback = get(i2c, output);
+        int8_t readback = DS4432::get(i2c, output);
         return (readback != ERROR) && (readback == cmd);
     }
     
     return true;
-}
-
-
-/* @brief Read the command from the DS4432
- * @param i2c: the I2C object
- * @param output: the output to read (0 for OUT0, 1 for OUT1)
- * @return Current value -127..+127, or ERROR (-128) if there is an error
- */
-inline int8_t get(TwoWire &i2c, uint8_t output) {
-    if (output > 1) return ERROR;
-    uint8_t reg = (output == 0) ? OUT0 : OUT1;
-
-    // First point to the register to read
-    i2c.beginTransmission(ADDR);
-    i2c.write(reg);
-    // End transmission without STOP (→ repeated START)
-    i2c.endTransmission(false);
-
-    // Read 1 byte
-    i2c.requestFrom(ADDR, 1);
-    if (!i2c.available()) {
-        return ERROR; // read error
-    }
-    uint8_t val = i2c.read();
-
-    // Convert the DS4432 byte to -127..+127
-    return byteToCmd(val);
 }
 
 } // namespace DS4432
