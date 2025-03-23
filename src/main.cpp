@@ -2,8 +2,8 @@
 #include <Wire.h>
 #include "DS4432.h"
 
-#define SDA_PIN D7
-#define SCL_PIN D8
+#define SDA_PIN D8
+#define SCL_PIN D7
 
 void testValue(uint8_t channel, int8_t expected) {
     int8_t actual = DS4432::get(Wire, channel);
@@ -17,6 +17,31 @@ void testValue(uint8_t channel, int8_t expected) {
     Serial.println((expected == actual) ? "OK" : "ERROR");
 }
 
+void scanI2C() {
+  Serial.println("Scanning I2C bus...");
+  byte count = 0;
+  
+  for (byte i = 8; i < 120; i++) {
+    Wire.beginTransmission(i);
+    byte error = Wire.endTransmission();
+    
+    if (error == 0) {
+      Serial.print("Device found at address 0x");
+      if (i < 16) Serial.print("0");
+      Serial.print(i, HEX);
+      Serial.print(" (0x");
+      if (i*2 < 16) Serial.print("0");
+      Serial.print(i*2, HEX);
+      Serial.println(" in 8-bit format)");
+      count++;
+    }
+  }
+  
+  Serial.print("Found ");
+  Serial.print(count);
+  Serial.println(" device(s).");
+}
+
 void setup() {
     delay(3000);
 
@@ -27,9 +52,20 @@ void setup() {
     
     // Init I2C
     Wire.begin(SDA_PIN, SCL_PIN);
-    delay(10); // Laisse le temps au DS4432 de s'initialiser
     
-    // Test canal 0
+    // Scan I2C bus
+    scanI2C();
+    
+    // Check if DS4432 is present
+    Wire.beginTransmission(DS4432::ADDR);
+    uint8_t error = Wire.endTransmission();
+    if (error == 0) {
+        Serial.println("DS4432 found!");
+    } else {
+        Serial.printf("DS4432 not found! Error: %d\n", error);
+    }
+    
+    // Test channel 0
     Serial.println("\nTesting channel 0 (source)");
     if (DS4432::set(Wire, 0, 100)) {
         Serial.println("Write OK");
@@ -38,7 +74,7 @@ void setup() {
         Serial.println("Write error!");
     }
     
-    // Test canal 1
+    // Test channel 1
     Serial.println("\nTesting channel 1 (sink)");
     if (DS4432::set(Wire, 1, -75)) {
         Serial.println("Write OK");
@@ -47,7 +83,7 @@ void setup() {
         Serial.println("Write error!");
     }
     
-    // Test valeur nulle
+    // Test null value
     Serial.println("\nTesting channel 0 (zero)");
     if (DS4432::set(Wire, 0, 0)) {
         Serial.println("Write OK");
@@ -61,11 +97,10 @@ void setup() {
 
 void loop() {
     static const int8_t values[] = {-127, -100, -80, -60, -40, -20, 0, 20, 40, 60, 80, 100, 127};
-    // static const int8_t values[] = {127};
     static const int8_t nbValues = sizeof(values) / sizeof(values[0]);
     static uint8_t index = 0;
     
-    // Applique la valeur aux deux canaux
+    // Apply value to both channels
     int8_t value = values[index];
     Serial.print("\nNew value: ");
     Serial.println(value);
@@ -78,7 +113,7 @@ void loop() {
         }
     }
     
-    // Passe à la valeur suivante
+    // Go to next value
     index = (index + 1) % nbValues;
     
     delay(2000);
