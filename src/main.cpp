@@ -52,13 +52,11 @@ void setup() {
     
     // Init I2C
     Wire.begin(SDA_PIN, SCL_PIN);
-    // Wire.setClock(100000); // Réduire la vitesse I2C à 100kHz pour plus de fiabilité
-    vTaskDelay(pdMS_TO_TICKS(100)); // Augmenter le délai pour laisser plus de temps au DS4432 de s'initialiser
     
-    // Scanner le bus I2C
+    // Scan I2C bus
     scanI2C();
     
-    // Vérifier si le DS4432 est présent
+    // Check if DS4432 is present
     Wire.beginTransmission(DS4432::ADDR);
     uint8_t error = Wire.endTransmission();
     if (error == 0) {
@@ -67,7 +65,7 @@ void setup() {
         Serial.printf("DS4432 not found! Error: %d\n", error);
     }
     
-    // Test canal 0
+    // Test channel 0
     Serial.println("\nTesting channel 0 (source)");
     if (DS4432::set(Wire, 0, 100)) {
         Serial.println("Write OK");
@@ -76,7 +74,7 @@ void setup() {
         Serial.println("Write error!");
     }
     
-    // Test canal 1
+    // Test channel 1
     Serial.println("\nTesting channel 1 (sink)");
     if (DS4432::set(Wire, 1, -75)) {
         Serial.println("Write OK");
@@ -85,7 +83,7 @@ void setup() {
         Serial.println("Write error!");
     }
     
-    // Test valeur nulle
+    // Test null value
     Serial.println("\nTesting channel 0 (zero)");
     if (DS4432::set(Wire, 0, 0)) {
         Serial.println("Write OK");
@@ -99,11 +97,10 @@ void setup() {
 
 void loop() {
     static const int8_t values[] = {-127, -100, -80, -60, -40, -20, 0, 20, 40, 60, 80, 100, 127};
-    // static const int8_t values[] = {127};
     static const int8_t nbValues = sizeof(values) / sizeof(values[0]);
     static uint8_t index = 0;
     
-    // Applique la valeur aux deux canaux
+    // Apply value to both channels
     int8_t value = values[index];
     Serial.print("\nNew value: ");
     Serial.println(value);
@@ -116,7 +113,7 @@ void loop() {
         }
     }
     
-    // Passe à la valeur suivante
+    // Go to next value
     index = (index + 1) % nbValues;
     
     delay(2000);
